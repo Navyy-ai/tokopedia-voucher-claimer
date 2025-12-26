@@ -1,0 +1,27 @@
+{
+  "target_vouchers": [
+    {
+      "name": "Belanjaanmu Dibayarin Tokopedia",
+      "keywords": [
+        "Belanjaanmu Dibayarin",
+        "Belanjaanmu dibayarin",
+        "dibayarin tokopedia",
+        "Dibayarin Tokopedia"
+      ],
+      "priority": 1,
+      "enabled": true,
+      "auto_claim": true,
+      "notification": {
+        "enabled": true,
+        "sound": true,
+        "message": "TARGET VOUCHER FOUND!"
+      }
+    }
+  ],
+  "settings": {
+    "scan_mode": "targeted",
+    "priority_claim": true,
+    "retry_on_fail": true,
+    "max_retries": 5
+  }
+}

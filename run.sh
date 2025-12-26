@@ -26,13 +26,21 @@ fi
 show_menu() {
     echo ""
     echo "🚀 Select execution mode:"
-    echo "1) Single Account Claim (default)"
-    echo "2) Multi-Account Claim"
-    echo "3) Voucher Monitor"
-    echo "4) Maintenance Tasks"
-    echo "5) Installation Check"
-    echo "6) Exit"
+    echo "1) Target Voucher Claim (Belanjaanmu Dibayarin Tokopedia)"
+    echo "2) Single Account Claim (All Vouchers)"
+    echo "3) Multi-Account Claim"
+    echo "4) Voucher Monitor"
+    echo "5) Maintenance Tasks"
+    echo "6) Installation Check"
+    echo "7) Exit"
     echo ""
+}
+
+# Function to run target voucher claim
+run_target() {
+    echo "🎯 Running target voucher claimer..."
+    echo "🔍 Target: Belanjaanmu Dibayarin Tokopedia"
+    python3 src/target_claimer.py
 }
 
 # Function to run single account claim
@@ -101,29 +109,33 @@ if [ $# -eq 0 ]; then
     # Interactive mode
     while true; do
         show_menu
-        read -p "Enter your choice (1-6) [default: 1]: " choice
+        read -p "Enter your choice (1-7) [default: 1]: " choice
         choice=${choice:-1}
         
         case $choice in
             1)
-                run_single
+                run_target
                 break
                 ;;
             2)
-                run_multi
+                run_single
                 break
                 ;;
             3)
-                run_monitor
+                run_multi
                 break
                 ;;
             4)
-                run_maintenance
+                run_monitor
+                break
                 ;;
             5)
-                check_installation
+                run_maintenance
                 ;;
             6)
+                check_installation
+                ;;
+            7)
                 echo "👋 Goodbye!"
                 exit 0
                 ;;
@@ -135,6 +147,9 @@ if [ $# -eq 0 ]; then
 else
     # Command line mode
     case $1 in
+        "target")
+            run_target
+            ;;
         "single")
             run_single
             ;;
@@ -151,7 +166,8 @@ else
             check_installation
             ;;
         *)
-            echo "Usage: $0 {single|multi|monitor|maintenance|check}"
+            echo "Usage: $0 {target|single|multi|monitor|maintenance|check}"
+            echo "  target      - Run target voucher claim"
             echo "  single      - Run single account claim"
             echo "  multi       - Run multi-account claim"
             echo "  monitor     - Start voucher monitor"

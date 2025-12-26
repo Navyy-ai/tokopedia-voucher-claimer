@@ -1,17 +1,20 @@
 # 🎫 Tokopedia Voucher Auto Claimer - Termux Edition
 
-Script otomatis untuk mengklaim voucher Tokopedia menggunakan Termux. Script ini dirancang untuk memudahkan pengguna dalam mendapatkan voucher-voucher yang tersedia di Tokopedia secara otomatis.
+Script otomatis untuk mengklaim voucher Tokopedia menggunakan Termux. Script ini dirancang untuk memudahkan pengguna dalam mendapatkan voucher-voucher yang tersedia di Tokopedia secara otomatis, dengan fitur khusus untuk target voucher tertentu seperti "Belanjaanmu Dibayarin Tokopedia".
 
 ## 🚀 Fitur
 
 - ✅ Auto-login ke akun Tokopedia
 - 🔍 Scan otomatis voucher yang tersedia
-- 🎯 Klaim voucher secara otomatis
+- 🎯 **Target Voucher Detection** - Deteksi khusus untuk voucher target
+- 🎯 **Priority Claiming** - Klaim voucher target terlebih dahulu
+- 🔔 **Target Alerts** - Notifikasi khusus saat voucher target ditemukan
 - 📊 Generate laporan hasil klaim
 - 🛡️ Anti-detection dengan delay random
 - 📱 Mobile view untuk compatibility Termux
 - 📝 Logging lengkap untuk troubleshooting
 - ⚙️ Konfigurasi mudah dengan file .env
+- 👥 Multi-account support
 
 ## 📋 Persyaratan
 
@@ -70,6 +73,70 @@ python3 src/voucher_claimer.py
 export TOKOPEDIA_EMAIL="email_anda@example.com"
 export TOKOPEDIA_PASSWORD="password_anda"
 python3 src/voucher_claimer.py
+```
+
+## 🎯 Target Voucher Configuration
+
+Script ini mendukung konfigurasi untuk voucher target tertentu, seperti "Belanjaanmu Dibayarin Tokopedia".
+
+### Setup Target Voucher
+
+Edit file `config/target_voucher.json`:
+
+```json
+{
+  "target_vouchers": [
+    {
+      "name": "Belanjaanmu Dibayarin Tokopedia",
+      "keywords": [
+        "Belanjaanmu Dibayarin",
+        "Belanjaanmu dibayarin",
+        "dibayarin tokopedia",
+        "Dibayarin Tokopedia"
+      ],
+      "priority": 1,
+      "enabled": true,
+      "auto_claim": true,
+      "notification": {
+        "enabled": true,
+        "sound": true,
+        "message": "TARGET VOUCHER FOUND!"
+      }
+    }
+  ],
+  "settings": {
+    "scan_mode": "targeted",
+    "priority_claim": true,
+    "retry_on_fail": true,
+    "max_retries": 5
+  }
+}
+```
+
+### Fitur Target Voucher
+
+- **Priority Claiming**: Voucher target akan diklaim terlebih dahulu
+- **Keyword Matching**: Deteksi berdasarkan kata kunci yang dikonfigurasi
+- **Special Alerts**: Notifikasi khusus saat voucher target ditemukan
+- **Dedicated Reports**: Pemisahan laporan untuk target dan regular voucher
+
+### Menambahkan Target Voucher Baru
+
+Tambahkan entry baru di `config/target_voucher.json`:
+
+```json
+{
+  "name": "Nama Voucher Baru",
+  "keywords": ["keyword1", "keyword2"],
+  "priority": 1,
+  "enabled": true,
+  "auto_claim": true,
+  "notification": {
+    "enabled": true,
+    "sound": true,
+    "message": "VOUCHER DITEMUKAN!"
+  }
+}
 ```
 
 ## ⚙️ Konfigurasi

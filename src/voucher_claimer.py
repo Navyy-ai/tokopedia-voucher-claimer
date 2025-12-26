@@ -10,6 +10,7 @@ import time
 import random
 import logging
 import requests
+import json
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -33,12 +34,30 @@ class TokopediaVoucherClaimer:
         self.wait = None
         self.claimed_vouchers = []
         self.failed_vouchers = []
+        self.target_vouchers_config = self.load_target_voucher_config()
+        self.target_vouchers_found = []
         
         # Setup logging
         self.setup_logging()
         
         # Setup browser
         self.setup_browser()
+    
+    def load_target_voucher_config(self):
+        """Load target voucher configuration"""
+        try:
+            config_file = "config/target_voucher.json"
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                self.logger.info("✅ Target voucher configuration loaded")
+                return config
+            else:
+                self.logger.info("📋 No target voucher configuration found, using general scan mode")
+                return None
+        except Exception as e:
+            self.logger.error(f"❌ Error loading target voucher config: {e}")
+            return None
         
     def setup_logging(self):
         """Setup logging untuk monitoring"""
@@ -165,6 +184,7 @@ class TokopediaVoucherClaimer:
     def scan_available_vouchers(self):
         """Scan for available vouchers on the page"""
         vouchers = []
+        target_vouchers = []
         
         try:
             self.logger.info("🔍 Scanning for available vouchers...")
@@ -183,16 +203,49 @@ class TokopediaVoucherClaimer:
                     voucher_data = self.extract_voucher_data(element)
                     if voucher_data:
                         vouchers.append(voucher_data)
+                        
+                        # Check if this is a target voucher
+                        if voucher_data['is_target']:
+                            target_vouchers.append(voucher_data)
+                            self.logger.info(f"🎯 TARGET VOUCHER FOUND: {voucher_data['title']}")
                 except Exception as e:
                     self.logger.warning(f"Error extracting voucher: {e}")
                     continue
             
-            self.logger.info(f"📊 Found {len(vouchers)} vouchers")
+            # Sort vouchers by priority (target vouchers first)
+            vouchers.sort(key=lambda x: x['priority'], reverse=True)
+            
+            self.logger.info(f"📊 Found {len(vouchers)} vouchers total")
+            if target_vouchers:
+                self.logger.info(f"🎯 Found {len(target_vouchers)} target vouchers!")
+                self.target_vouchers_found = target_vouchers
+            
             return vouchers
             
         except Exception as e:
             self.logger.error(f"❌ Error scanning vouchers: {e}")
             return []
+    
+    def is_target_voucher(self, voucher_info):
+        """Check if voucher matches target configuration"""
+        if not self.target_vouchers_config:
+            return False
+        
+        target_vouchers = self.target_vouchers_config.get('target_vouchers', [])
+        
+        for target in target_vouchers:
+            if not target.get('enabled', True):
+                continue
+            
+            keywords = target.get('keywords', [])
+            voucher_title = voucher_info.get('title', '').lower()
+            
+            # Check if any keyword matches
+            for keyword in keywords:
+                if keyword.lower() in voucher_title:
+                    return target
+        
+        return None
     
     def extract_voucher_data(self, element):
         """Extract voucher information from element"""
@@ -227,6 +280,17 @@ class TokopediaVoucherClaimer:
             except:
                 voucher_info['claimed'] = False
             
+            # Check if this is a target voucher
+            target_config = self.is_target_voucher(voucher_info)
+            if target_config:
+                voucher_info['is_target'] = True
+                voucher_info['target_config'] = target_config
+                voucher_info['priority'] = target_config.get('priority', 0)
+            else:
+                voucher_info['is_target'] = False
+                voucher_info['target_config'] = None
+                voucher_info['priority'] = 0
+            
             # Store element reference
             voucher_info['element'] = element
             
@@ -239,7 +303,16 @@ class TokopediaVoucherClaimer:
     def claim_voucher(self, voucher):
         """Claim a specific voucher"""
         try:
-            self.logger.info(f"🎯 Attempting to claim: {voucher['title']}")
+            # Check if this is a target voucher and add special logging
+            if voucher.get('is_target', False):
+                self.logger.info(f"🎯🎯🎯 TARGET VOUCHER ATTEMPT: {voucher['title']} 🎯🎯🎯")
+                target_config = voucher.get('target_config', {})
+                
+                # Play sound notification if enabled
+                if target_config.get('notification', {}).get('sound', False):
+                    self.logger.info("🔔 TARGET VOUCHER ALERT!")
+            else:
+                self.logger.info(f"🎯 Attempting to claim: {voucher['title']}")
             
             if voucher['claimed']:
                 self.logger.info(f"⚠️  Voucher already claimed: {voucher['title']}")
@@ -267,7 +340,10 @@ class TokopediaVoucherClaimer:
                 
                 page_text = self.driver.page_source.lower()
                 if any(indicator in page_text for indicator in success_indicators):
-                    self.logger.info(f"✅ Successfully claimed: {voucher['title']}")
+                    if voucher.get('is_target', False):
+                        self.logger.info(f"✅✅✅ TARGET VOUCHER SUCCESSFULLY CLAIMED: {voucher['title']} ✅✅✅")
+                    else:
+                        self.logger.info(f"✅ Successfully claimed: {voucher['title']}")
                     self.claimed_vouchers.append(voucher)
                     return True
                 else:
@@ -290,6 +366,12 @@ class TokopediaVoucherClaimer:
         try:
             self.logger.info("🚀 Starting Tokopedia Voucher Auto Claimer")
             
+            # Check if target vouchers are configured
+            if self.target_vouchers_config:
+                target_names = [v['name'] for v in self.target_vouchers_config.get('target_vouchers', []) if v.get('enabled')]
+                if target_names:
+                    self.logger.info(f"🎯 Target vouchers configured: {', '.join(target_names)}")
+            
             # Login
             if not self.login_tokopedia(email, password):
                 return False
@@ -298,24 +380,45 @@ class TokopediaVoucherClaimer:
             if not self.find_voucher_page():
                 return False
             
-            # Scan for vouchers
+            # Scan for vouchers (sorted by priority)
             vouchers = self.scan_available_vouchers()
             
             if not vouchers:
                 self.logger.info("📭 No vouchers found")
                 return True
             
-            # Claim available vouchers
-            unclaimed_vouchers = [v for v in vouchers if not v['claimed']]
+            # Separate target and regular vouchers
+            target_vouchers = [v for v in vouchers if v.get('is_target', False) and not v['claimed']]
+            regular_vouchers = [v for v in vouchers if not v.get('is_target', False) and not v['claimed']]
             
-            self.logger.info(f"🎯 Found {len(unclaimed_vouchers)} unclaimed vouchers")
-            
-            for voucher in unclaimed_vouchers:
-                success = self.claim_voucher(voucher)
+            # Claim target vouchers first
+            if target_vouchers:
+                self.logger.info(f"🎯🎯🎯 CLAIMING {len(target_vouchers)} TARGET VOUCHERS FIRST! 🎯🎯🎯")
                 
-                # Random delay between claims to avoid detection
-                delay = random.uniform(2, 5)
-                time.sleep(delay)
+                for voucher in target_vouchers:
+                    success = self.claim_voucher(voucher)
+                    
+                    # Shorter delay for target vouchers (priority)
+                    delay = random.uniform(1, 3)
+                    time.sleep(delay)
+                
+                # Check results
+                claimed_targets = [v for v in target_vouchers if v in self.claimed_vouchers]
+                if claimed_targets:
+                    self.logger.info(f"✅ Successfully claimed {len(claimed_targets)} target vouchers!")
+                else:
+                    self.logger.warning(f"⚠️  Failed to claim any target vouchers")
+            
+            # Claim regular vouchers
+            if regular_vouchers:
+                self.logger.info(f"🎫 Claiming {len(regular_vouchers)} regular vouchers...")
+                
+                for voucher in regular_vouchers:
+                    success = self.claim_voucher(voucher)
+                    
+                    # Regular delay
+                    delay = random.uniform(2, 5)
+                    time.sleep(delay)
             
             # Generate report
             self.generate_report()
@@ -328,29 +431,55 @@ class TokopediaVoucherClaimer:
     
     def generate_report(self):
         """Generate claim report"""
+        # Separate target and regular vouchers
+        target_claimed = [v for v in self.claimed_vouchers if v.get('is_target', False)]
+        regular_claimed = [v for v in self.claimed_vouchers if not v.get('is_target', False)]
+        target_failed = [v for v in self.failed_vouchers if v.get('is_target', False)]
+        regular_failed = [v for v in self.failed_vouchers if not v.get('is_target', False)]
+        
         report = f"""
 📊 VOUCHER CLAIM REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-{'='*50}
+{'='*60}
 
+🎯 TARGET VOUCHERS:
+✅ Claimed: {len(target_claimed)}
+❌ Failed: {len(target_failed)}
+
+🎫 REGULAR VOUCHERS:
+✅ Claimed: {len(regular_claimed)}
+❌ Failed: {len(regular_failed)}
+
+📊 TOTAL:
 ✅ SUCCESSFULLY CLAIMED: {len(self.claimed_vouchers)}
 ❌ FAILED TO CLAIM: {len(self.failed_vouchers)}
+{'='*60}
 
-CLAIMED VOUCHERS:
+TARGET VOUCHERS CLAIMED:
 {'-'*30}
 """
         
-        for voucher in self.claimed_vouchers:
-            report += f"🎫 {voucher['title']} - {voucher['discount']}\n"
+        for voucher in target_claimed:
+            report += f"🎯🎯🎯 {voucher['title']} - {voucher['discount']}\n"
         
-        report += f"""
-FAILED VOUCHERS:
-{'-'*30}
-"""
+        report += "\nTARGET VOUCHERS FAILED:\n"
+        report += f"{'-'*30}\n"
         
-        for voucher in self.failed_vouchers:
+        for voucher in target_failed:
             report += f"❌ {voucher['title']} - {voucher['discount']}\n"
         
-        report += f"\n{'='*50}\n"
+        report += f"\nREGULAR VOUCHERS CLAIMED:\n"
+        report += f"{'-'*30}\n"
+        
+        for voucher in regular_claimed:
+            report += f"🎫 {voucher['title']} - {voucher['discount']}\n"
+        
+        report += f"\nREGULAR VOUCHERS FAILED:\n"
+        report += f"{'-'*30}\n"
+        
+        for voucher in regular_failed:
+            report += f"❌ {voucher['title']} - {voucher['discount']}\n"
+        
+        report += f"\n{'='*60}\n"
         
         # Save report to file
         report_filename = f"data/claim_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
