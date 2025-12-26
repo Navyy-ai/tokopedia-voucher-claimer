@@ -1,0 +1,28 @@
+{
+  "accounts": [
+    {
+      "name": "Account_1",
+      "email": "email1@example.com",
+      "password": "password1",
+      "enabled": true
+    },
+    {
+      "name": "Account_2", 
+      "email": "email2@example.com",
+      "password": "password2",
+      "enabled": true
+    },
+    {
+      "name": "Account_3",
+      "email": "email3@example.com", 
+      "password": "password3",
+      "enabled": false
+    }
+  ],
+  "settings": {
+    "max_parallel_workers": 3,
+    "delay_between_accounts": 30,
+    "retry_failed_accounts": true,
+    "max_retries": 2
+  }
+}
