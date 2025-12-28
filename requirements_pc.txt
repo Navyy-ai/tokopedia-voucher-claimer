@@ -12,6 +12,7 @@ colorama==0.4.6
 
 # PC-specific dependencies
 psutil==5.9.6
+platform==1.0.8
 packaging==23.2
 
 # GUI dependencies (optional)

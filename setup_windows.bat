@@ -1,5 +1,5 @@
 @echo off
-REM Tokopedia Voucher Claimer - Windows Setup Script (FIXED VERSION)
+REM Tokopedia Voucher Claimer - Windows Setup Script
 REM Automated installation for Windows
 
 echo.
@@ -10,7 +10,7 @@ echo ╚════════════════════════
 echo.
 
 REM Check Python installation
-echo [1/6] Checking Python installation...
+echo [1/5] Checking Python installation...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ Python not found!
@@ -28,7 +28,7 @@ echo ✅ Python found
 echo.
 
 REM Check pip
-echo [2/6] Checking pip...
+echo [2/5] Checking pip...
 pip --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ pip not found!
@@ -43,7 +43,7 @@ echo ✅ pip found
 echo.
 
 REM Create virtual environment
-echo [3/6] Creating virtual environment...
+echo [3/5] Creating virtual environment...
 if not exist "venv" (
     python -m venv venv
     echo ✅ Virtual environment created
@@ -55,44 +55,18 @@ REM Activate virtual environment
 call venv\Scripts\activate.bat
 
 REM Upgrade pip
-echo [4/6] Upgrading pip...
+echo [4/5] Upgrading pip...
 python -m pip install --upgrade pip
 echo ✅ pip upgraded
 echo.
 
-REM Fix requirements_pc.txt
-echo [5/6] Installing Python dependencies...
-echo Checking and fixing requirements_pc.txt...
-
-if exist "requirements_pc.txt" (
-    findstr /C:"platform==1.0.8" requirements_pc.txt >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo Removing invalid platform package...
-        powershell -Command "(Get-Content requirements_pc.txt) -replace 'platform==1\.0\.8[^\r\n]*[\r\n]*', '' | Where-Object { $_.Trim() -ne '' } | Set-Content requirements_pc.txt"
-        echo ✅ Fixed requirements_pc.txt
-    ) else (
-        echo ✅ requirements_pc.txt is correct
-    )
-) else (
-    echo ⚠️  requirements_pc.txt not found, using manual installation
-    goto manual_install
-)
-
+REM Install dependencies
+echo [5/5] Installing Python dependencies...
 echo Installing requirements for PC...
-pip install requests beautifulsoup4 selenium webdriver-manager lxml python-dotenv colorama psutil packaging
+pip install -r requirements_pc.txt
 echo.
 echo ✅ Dependencies installed
 echo.
-goto install_complete
-
-:manual_install
-echo Installing dependencies manually...
-pip install requests beautifulsoup4 selenium webdriver-manager lxml python-dotenv colorama psutil packaging
-echo.
-echo ✅ Dependencies installed
-echo.
-
-:install_complete
 
 REM Create directories
 echo Creating directories...
@@ -145,18 +119,12 @@ echo call venv\Scripts\activate.bat >> start_monitor.bat
 echo python src\monitor.py >> start_monitor.bat
 echo pause >> start_monitor.bat
 
-echo @echo off > run_menu.bat
-echo cd /d "%cd%" >> run_menu.bat
-echo call venv\Scripts\activate.bat >> run_menu.bat
-echo python run.py >> run_menu.bat
-echo pause >> run_menu.bat
-
 echo ✅ Windows launchers created
 echo.
 
 REM Test installation
 echo Testing installation...
-python -c "import requests, selenium, bs4; import sys; sys.path.insert(0, 'src'); import platform_utils" 2>nul
+python -c "import requests, selenium, bs4, platform_utils" >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ Installation test failed!
     echo Please check the error messages above.
@@ -167,6 +135,11 @@ if %errorlevel% neq 0 (
 echo ✅ Installation test passed
 echo.
 
+REM Platform detection
+echo Detecting platform...
+python src\platform_utils.py
+echo.
+
 REM Installation complete
 echo ════════════════════════════════════════════════════════════
 echo ✅ Installation completed successfully!
@@ -174,17 +147,14 @@ echo ═════════════════════════
 echo.
 echo 📋 Next steps:
 echo 1. Edit .env file with your Tokopedia credentials
-echo    (Double-click .env file to edit)
-echo.
 echo 2. Run one of these launchers:
-echo    - run_menu.bat              (Interactive menu - Recommended)
 echo    - start_claimer.bat        (Regular voucher claimer)
 echo    - start_target_claimer.bat (Target voucher claimer)
 echo    - start_monitor.bat        (Voucher monitor)
 echo.
-echo 3. Or run via Command Prompt:
-echo    venv\Scripts\activate.bat
-echo    python run.py
+echo Or run manually:
+echo    - Activate venv: venv\Scripts\activate.bat
+echo    - Run claimer: python src\voucher_claimer.py
 echo.
 echo 📚 Documentation: README.md
 echo 📄 Logs: logs\ directory
