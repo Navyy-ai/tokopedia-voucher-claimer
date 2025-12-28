@@ -1,0 +1,101 @@
+# Tokopedia Voucher Claimer - Git Ignore File
+
+# Environment variables and sensitive data
+.env
+config/accounts.json
+
+# Logs
+logs/*.log
+logs/*.txt
+
+# Data and reports
+data/*.txt
+data/*.json
+data/*.csv
+
+# Backups
+backups/*
+*.backup
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ChromeDriver and browser files
+chromedriver
+*.chromedriver
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Configuration overrides
+config/local_*
+config/user_*
+
+# Runtime files
+*.pid
+*.lock
+
+# Test files
+test_*.py
+tests/
+.pytest_cache/
+
+# Documentation build
+docs/_build/
+
+# Package files
+*.zip
+*.tar.gz
+*.rar
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

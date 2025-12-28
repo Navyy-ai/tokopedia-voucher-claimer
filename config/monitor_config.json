@@ -1,0 +1,31 @@
+{
+  "check_interval": 300,
+  "max_checks": 100,
+  "auto_claim": true,
+  "notification": true,
+  "notification_settings": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "sender_email": "",
+      "sender_password": "",
+      "recipient_email": ""
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "",
+      "chat_id": ""
+    }
+  },
+  "filters": {
+    "min_discount": 0,
+    "exclude_keywords": ["expired", "kadaluarsa"],
+    "include_keywords": []
+  },
+  "advanced": {
+    "user_rotation": false,
+    "proxy_rotation": false,
+    "stealth_mode": true
+  }
+}
